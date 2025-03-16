@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商家页面</title>
+  <link rel="stylesheet" href="./public/css/style_hx.css">
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="container">
+        <h1>商家页面</h1>
+        <ul class="nav-links">
+          <li><a href="#" onclick="displayProducts_hx()">商品列表</a></li>
+          <li><a href="#" onclick="showAddProductForm_hx()">发布商品</a></li>
+          
+          <li><a href="login_hx.html">退出登录</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+  <main id="main" class="container">
+    <h3 id="merchant-address"></h3>
+    <p id="contract-balance"></p>
+    <section id="product-list">
+      <h2>已发布的商品列表</h2>
+      <div id="products" class="product-container"></div>
+    </section>
+    <section id="add-product-form" style="display: none;">
+      <div id="add-product-form-container">
+        <h2>发布商品</h2>
+        <form id="add-product">
+          <label for="product-name">商品名称：</label>
+          <input type="text" id="product-name" required><br><br>
+          <label for="product-description">商品描述：</label><br>
+          <textarea id="product-description" rows="4" cols="50" required></textarea><br><br>
+          <label for="product-price">商品价格：</label>
+          <input type="number" id="product-price" min="0" step="0.01" required><br><br>
+          <label for="product-quantity">商品数量：</label>
+          <input type="number" id="product-quantity" min="1" required><br><br>
+          <label for="product-image">商品图片：</label>
+          <input type="file" id="productImage" required><br><br>
+          <button type="submit">发布</button>
+        </form>
+        <div id="result"></div>
+        <div id="product-result"></div>
+      </div>
+    </section>
+    <section id="transactions" style="display: none;">
+      <h2>完成的交易列表</h2>
+      <ul id="completed-transactions"></ul>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="./libs/contracts.js"></script>
+  <script>
+    let web3;
+    let merchantAddr;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      console.log("DOM fully loaded and parsed");
+
+      if (typeof window.ethereum !== 'undefined') {
+        web3 = new Web3(window.ethereum);
+        try {
+          await window.ethereum.enable();
+        } catch (error) {
+          console.error("User denied account access or other error occurred: ", error);
+        }
+      } else {
+        web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8888'));
+        console.log("No web3 instance injected, using Local web3.");
+      }
+
+      function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+      }
+
+      merchantAddr = getUrlParameter('MerchantContractAddress');
+      document.getElementById('merchant-address').innerText = '商家合约地址为：' + merchantAddr;
+
+      async function displayProducts_hx() {
+        document.getElementById('add-product-form').style.display = 'none';
+        document.getElementById('product-list').style.display = 'block';
+        document.getElementById('transactions').style.display = 'none';
+
+        const productsContainer = document.getElementById('products');
+        productsContainer.innerHTML = '';
+
+        try {
+          const userAddress = merchantAddr;
+          const productIds = await fetchProductsByAddress(userAddress);
+
+          if (productIds.length === 0) {
+            productsContainer.innerHTML = '<p>商家还未发布任何商品</p>';
+          } else {
+            for (let i = 0; i < productIds.length; i++) {
+              const productInfo = await getProductInfo(userAddress, productIds[i]);
+              const imageUrl = `https://gateway.pinata.cloud/ipfs/${productInfo.image_hx}`;
+              const productCard = `
+                <div class="product-card">
+                  <h3>${productInfo.name_hx}</h3>
+                  <p>描述：${productInfo.description_hx}</p>
+                  <p>价格：${productInfo.price_hx}</p>
+                  <img src="${imageUrl}" alt="${productInfo.name_hx}">
+                  <p>状态：${productInfo.available_hx ? '在售' : '已下架'}</p>
+                  <button class="btn-action" onclick="handleSetProductOnSale('${productInfo.id_hx}', '${userAddress}', ${!productInfo.available_hx})">${productInfo.available_hx ? '下架商品' : '上架商品'}</button>
+                </div>`;
+              productsContainer.innerHTML += productCard;
+            }
+          }
+        } catch (error) {
+          console.error('获取商品列表失败:', error);
+          productsContainer.innerHTML = '<p>获取商品列表失败</p>';
+        }
+      }
+
+      async function addProduct(event) {
+        event.preventDefault();
+
+        const name = document.getElementById('product-name').value;
+        const description = document.getElementById('product-description').value;
+        const price = document.getElementById('product-price').value;
+        const quantity = document.getElementById('product-quantity').value;
+        const imageBuffer = document.getElementById('productImage').files[0];
+
+        if (!imageBuffer) {
+          alert("请上传商品图片！");
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('file', imageBuffer);
+
+          const pinataApiKey = 'f6b13c955cea37745807';
+          const pinataSecretApiKey = '43ff43a4d8c2850ba4eb1c8ea590c083b17ef119b21128ff3e4f54d0a00a20fe';
+
+          const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+            method: 'POST',
+            headers: {
+              'pinata_api_key': pinataApiKey,
+              'pinata_secret_api_key': pinataSecretApiKey
+            },
+            body: formData
+          });
+          if (!response.ok) {
+            throw new Error(`Error: ${response.statusText}`);
+          }
+          const data = await response.json();
+          const productImageCID = data.IpfsHash;
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          const owner = accounts[0];
+          const merchantResponse = await fetch('./artifacts/contracts/MerchantContract_hx.sol/MerchantContract_hx.json');
+          const merchantJson = await merchantResponse.json();
+          const merchantContract = new web3.eth.Contract(merchantJson.abi, merchantAddr);
+          await merchantContract.methods.addProduct_hx(name, description, price, quantity, productImageCID).send({
+            from: owner,
+            gas: 5000000
+          });
+
+          document.getElementById('add-product').reset();
+          document.getElementById('product-result').innerHTML = "商品发布成功！";
+
+        } catch (error) {
+          console.error('添加商品失败:', error);
+          document.getElementById('product-result').innerHTML = "商品发布失败：" + error.message;
+        }
+      }
+
+      function showAddProductForm_hx() {
+        document.getElementById('add-product-form').style.display = 'block';
+        document.getElementById('product-list').style.display = 'none';
+        document.getElementById('transactions').style.display = 'none';
+      }
+
+      async function handleSetProductOnSale(productId, merchantAddr, onSale) {
+        try {
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          const owner = accounts[0];
+
+          const merchantResponse = await fetch('./artifacts/contracts/MerchantContract_hx.sol/MerchantContract_hx.json');
+          const merchantJson = await merchantResponse.json();
+          const merchantContract = new web3.eth.Contract(merchantJson.abi, merchantAddr);
+
+          await merchantContract.methods.setProductOnSale_hx(productId, onSale).send({
+            from: owner,
+            gas: 5000000
+          });
+
+          const message = onSale ? '商品已成功上架！' : '商品已成功下架！';
+          alert(message);
+          displayProducts_hx();
+        } catch (error) {
+          console.error('操作商品失败:', error);
+          alert('操作商品失败：' + error.message);
+        }
+      }
+
+      async function getProductInfo(userAddress, productId) {
+        try {
+          const merchantResponse = await fetch('./artifacts/contracts/MerchantContract_hx.sol/MerchantContract_hx.json');
+          const merchantJson = await merchantResponse.json();
+          const merchantContract = new web3.eth.Contract(merchantJson.abi, userAddress);
+          const productInfo = await merchantContract.methods.getProductInfoById_hx(productId).call();
+
+          let product = {};
+          product.id_hx = productInfo[0];
+          product.name_hx = productInfo[3];
+          product.description_hx = productInfo[4];
+          product.price_hx = productInfo[5];
+          product.quantity_hx = productInfo[6];
+          product.available_hx = productInfo[7];
+          product.image_hx = productInfo[8];
+
+          return product;
+        } catch (error) {
+          console.error("获取商品信息失败:", error);
+          throw error;
+        }
+      }
+
+      async function fetchProductsByAddress(address) {
+        try {
+          const merchantResponse = await fetch('./artifacts/contracts/MerchantContract_hx.sol/MerchantContract_hx.json');
+          const merchantJson = await merchantResponse.json();
+          const merchantContract = new web3.eth.Contract(merchantJson.abi, address);
+          const productIds = await merchantContract.methods.getProductIds_hx().call();
+          return productIds;
+        } catch (error) {
+          console.error("获取商品ID列表失败:", error);
+          throw error;
+        }
+      }
+
+      document.getElementById('add-product').addEventListener('submit', addProduct);
+      window.displayProducts_hx = displayProducts_hx;
+      window.showAddProductForm_hx = showAddProductForm_hx;
+      window.handleSetProductOnSale = handleSetProductOnSale;
+      window.checkContractBalance = checkContractBalance;
+
+      displayProducts_hx();
+    });
+  </script>
+</body>
+
+</html>

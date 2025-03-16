@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - 校园二手市场_hx</title>
+  <link rel="stylesheet" href="./public/css/style_hx.css">
+
+</head>
+<body>
+  
+  <header>
+    <nav class="navbar">
+      <div class="container">
+        <h1>校园二手市场DApp</h1>
+        <ul class="nav-links">
+          <li><a href="home_hx.html">首页</a></li>
+          <li><a href="login_hx.html">登录</a></li>
+          <li><a href="register_hx.html">注册</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <div id="app" class="introduction">
+    <h1 class="text-center">登录</h1>
+    <form id="loginForm" class="login-form" @submit.prevent="userLogin">
+      <div class="form-group">
+        <label for="loginUsername">用户名：</label>
+        <input type="text" id="loginUsername" v-model="user.userName" required>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">密码：</label>
+        <input type="password" id="loginPassword" v-model="user.password" required>
+      </div>
+      <div class="form-group">
+        <label for="loginRole">选择身份：</label>
+        <select id="loginRole" v-model="user.type">
+          <option value="用户">用户</option>
+          <option value="商家">商家</option>
+        </select>
+      </div>
+      <button type="submit" class="button">登录</button>
+    </form>
+    <p class="text-center">还没有账号？<a href="register_hx.html">注册</a></p>
+    <p class="alert" v-if="alert">{{ alert }}</p>
+  </div>
+  
+  
+
+  <footer class="footer">
+    <p>版权所有 &copy; 2024 校园二手市场_hx</p>
+  </footer>
+
+  <!-- 引入 Vue.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+  <!-- 引入 web3.js -->
+  <script src="./web3.min.js"></script>
+
+  <!-- 引入 contracts.js -->
+  <script src="./libs/contracts.js"></script>
+
+
+  <!-- JavaScript 代码 -->
+  <script>
+    let web3;
+    // 检测浏览器环境及是否安装了 Metamask
+    if (typeof window !== 'undefined' && typeof window.web3 !== 'undefined') {
+      web3 = new Web3(window.web3.currentProvider);
+      console.log("已安装 Metamask");
+    } else {
+      web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8888'));
+      console.log("未安装 Metamask");
+    }
+
+    new Vue({
+      el: '#app', // 将Vue实例挂载到id为'app'的元素上
+      data: {
+        user: {
+          userName: '',
+          password: '',
+          type: '用户' // 默认选择用户类型
+        },
+        alert: '', // 提示信息
+        contracts: {} // 初始化 Contracts 对象
+      },
+      methods: {
+        async userLogin() {
+          if (!this.validateForm()) return; // 验证表单
+
+          const { userName, password, type } = this.user;
+
+          var Contracts = await loadContracts(); // 加载智能合约
+          var UserContract_hx = Contracts.userContract; // 获取用户合约实例
+          var MerchantContract_hx = Contracts.merchantContract; // 获取商家合约实例
+
+          try {
+            const accounts = await ethereum.request({ method: 'eth_requestAccounts' }); // 请求账户授权
+            const owner = accounts[0]; // 获取当前账户地址
+
+            let pwdRight = false; // 密码验证结果，默认为 false
+            if (type === '用户') {
+              pwdRight = await UserContract_hx.methods.verifyPwd_hx(userName, password).call({ from: owner }); // 调用用户合约方法验证密码
+              if (pwdRight) {
+                let ownerAddr = await UserContract_hx.methods.creatorOwnerMap_hx(owner).call();
+                alert("用户登录成功");
+                window.location.href = "/user_hx.html?UserContractAddress=" + ownerAddr; // 用户登录成功后跳转到用户页面
+              }
+            } else if (type === '商家') {
+              pwdRight = await MerchantContract_hx.methods.verifyPwd_hx(userName, password).call({ from: owner }); // 调用商家合约方法验证密码
+              if (pwdRight) {
+                let merchantContractAddr = await MerchantContract_hx.methods.creatorMerchantMap_hx(owner).call();
+                alert("商家登录成功");
+                window.location.href = "/merchant_hx.html?MerchantContractAddress=" + merchantContractAddr; // 商家登录成功后跳转到商家页面
+              }
+            }
+
+            if (!pwdRight) {
+              this.alert = "用户名或密码错误"; // 登录失败提示信息
+            }
+          } catch (err) {
+            console.error(err.message);
+            this.alert = "登录失败：" + err.message; // 异常处理，输出错误信息
+          }
+        },
+        validateForm() {
+          if (!(this.user.userName && this.user.password && this.user.type)) {
+            alert("请填写完整信息！"); // 如果用户名、密码或身份未填写，提示用户补充完整信息
+            return false;
+          }
+          return true;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

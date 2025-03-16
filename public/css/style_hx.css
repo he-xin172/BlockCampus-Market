@@ -1,0 +1,287 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f7da;
+  color: #333;
+  background-image: url('../img/背景.jpg');
+}
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+
+.navbar {
+  height: 100px; /* 调整导航栏的高度，根据实际需要设置 */
+  background-color: #ffd6d6;
+  padding: 10px 0;
+  text-align: center;
+}
+
+.nav-links {
+  list-style-type: none;
+  float: right;
+}
+
+.nav-links li {
+  display: inline;
+  margin-right: 20px;
+}
+
+.nav-links li:first-child {
+  margin-left: auto;
+}
+
+.nav-links li a {
+  color: #333;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 5px 10px;
+  font-size: 18px;
+}
+
+.nav-links li a:hover {
+  text-decoration: underline;
+}
+
+.introduction {
+  padding: 20px;
+  background-color: #f9f3e6;
+  border-radius: 8px;
+  margin: 20px auto;
+  width: 80%;
+  max-width: 800px;
+}
+
+.introduction h1 {
+  color: #080808;
+}
+
+.introduction p {
+  line-height: 1.6;
+}
+
+.introduction ul {
+  margin-top: 10px;
+}
+
+.introduction li {
+  margin-bottom: 5px;
+}
+
+.introduction a {
+  color: #ffd6d6;
+  text-decoration: none;
+  margin-left: 10px;
+}
+
+.introduction a:hover {
+  text-decoration: underline;
+}
+
+.footer {
+  background-color: #ffd6d6;
+  text-align: center;
+  padding: 10px 0;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+}
+
+.footer p {
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .container {
+    width: 90%;
+  }
+
+  .nav-links {
+    display: block;
+    text-align: center;
+    float: none;
+    margin-top: 10px;
+  }
+
+  .nav-links li {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .introduction {
+    padding: 20px;
+    background-color: #f9f3e6;
+    border-radius: 8px;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 800px;
+  }
+}
+
+.button {
+  display: inline-block;
+  background-color: #f39090;
+  color: #333;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 5px;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #ffadad;
+}
+.text-center {
+  text-align: center; /* 居中显示文本 */
+}
+
+.login-form {
+  max-width: 300px; /* 调整表单的最大宽度 */
+  margin: 0 auto; /* 居中显示 */
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: inline-block;
+  width: 100px; /* 调整标签的宽度 */
+  text-align: right;
+  margin-right: 10px;
+}
+
+.form-group input,
+.form-group select {
+  width: 180px; /* 调整输入框和下拉菜单的宽度 */
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.button {
+  width: 100%; /* 按钮宽度与父容器相符 */
+  padding: 10px;
+  margin-top: 15px;
+}
+
+.alert {
+  color: red; /* 调整警告消息的颜色 */
+}
+.register-form {
+  max-width: 300px; /* 调整表单的最大宽度 */
+  margin: 0 auto; /* 居中显示 */
+}
+
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  margin: 10px;
+  width: calc(20% - 20px);
+  float: left;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  background-color: azure;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.product-card h3 {
+  margin-top: 0;
+}
+
+.product-card p {
+  margin-bottom: 5px;
+}
+
+.product-card img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.btn-action {
+  display: block;
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: center;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-action:hover {
+  background-color: #0056b3;
+}
+
+#add-product-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background-color: #f9f5d4;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+#add-product-form form {
+  width: 100%;
+  max-width: 400px;
+}
+
+#add-product-form h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#add-product-form label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+#add-product-form input[type="text"],
+#add-product-form input[type="number"],
+#add-product-form textarea {
+  width: calc(100% - 20px);
+  padding: 8px;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#add-product-form button[type="submit"] {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#add-product-form button[type="submit"]:hover {
+  background-color: #45a049;
+}

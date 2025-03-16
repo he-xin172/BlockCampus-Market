@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校园二手市场DApp</title>
+  <link rel="stylesheet" href="./public/css/style_hx.css">
+</head>
+<body>
+    <header>
+      <nav class="navbar">
+        <div class="container">
+          <h1>校园二手市场DApp</h1>
+          <ul class="nav-links">
+            <li><a href="home_hx.html">首页</a></li>
+            <li><a href="login_hx.html">登录</a></li>
+            <li><a href="register_hx.html">注册</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+  
+    <main class="container">
+      <section class="introduction">
+        <h1>欢迎来到校园二手市场DApp</h1>
+        <p>校园二手市场DApp是一个基于区块链技术的二手交易平台，旨在为校园内学生提供安全、透明的交易环境。本平台允许学生在无需担心中介或信任问题的情况下，安全地购买和出售二手物品。</p>
+        <p>我们的平台特点包括：</p>
+        <ul>
+          <li>去中心化：所有交易和信息都存储在区块链上，无需担心平台操纵或信息篡改。</li>
+          <li>安全可靠：通过智能合约执行交易，确保支付和交货的安全性。</li>
+          <li>透明度：所有交易记录都可以公开查看，确保交易的透明和可追溯性。</li>
+          <li>简便易用：用户界面友好，支持快速注册和交易操作。</li>
+        </ul>
+        <p>立即加入我们，体验全新的校园二手交易方式！</p>
+        <div style="margin-top: 10px; text-align: center;">
+          <a href="register_hx.html" class="button" style="margin-right: 10px;">尚未加入</a>
+          <a href="login_hx.html" class="button">已有账号</a>
+        </div>
+        
+      </section>
+    </main>
+  
+    <footer class="footer">
+      <div class="container">
+        <p>联系我们 | 隐私政策 | 版权信息</p>
+      </div>
+    </footer>
+  <!-- Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+      document.getElementById("registerButton").addEventListener("click", function () {
+          window.location.href = "register_hx.html"; 
+      });
+
+      document.getElementById("loginButton").addEventListener("click", function () {
+          window.location.href = "login_hx.html"; 
+      });
+  </script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
+  </body>
+  </html>

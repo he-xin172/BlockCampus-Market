@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册 - 校园二手市场_hx</title>
+  <link rel="stylesheet" href="./public/css/style_hx.css">
+</head>
+
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="container">
+        <h1>校园二手市场DApp</h1>
+        <ul class="nav-links">
+          <li><a href="home_hx.html">首页</a></li>
+          <li><a href="login_hx.html">登录</a></li>
+          <li><a href="register_hx.html">注册</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <div id="app" class="introduction">
+    <h1 class="text-center">注册</h1>
+    <form id="registerForm" class="register-form" @submit.prevent="addUser">
+      <div class="form-group">
+        <label for="registerUsername">用户名：</label>
+        <input type="text" id="registerUsername" v-model="user.userName" required>
+      </div>
+      <div class="form-group">
+        <label for="registerPassword">密码：</label>
+        <input type="password" id="registerPassword" v-model="user.password" required>
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword">确认密码：</label>
+        <input type="password" id="confirmPassword" v-model="user.confirm" required>
+      </div>
+      <div class="form-group">
+        <label for="registerRole">选择身份：</label>
+        <select id="registerRole" v-model="user.type">
+          <option value="buyer">用户</option>
+          <option value="seller">商家</option>
+        </select>
+      </div>
+      <button type="submit" class="button">注册</button>
+    </form>
+    <p class="text-center">已有账号？<a href="login_hx.html">登录</a></p>
+    <p class="alert" v-if="alert">{{ alert }}</p>
+  </div>
+
+  <footer class="footer">
+    <p>版权所有 &copy; 2024 校园二手市场_hx</p>
+  </footer>
+
+    <!-- 引入 contracts.js -->
+    <script src="./libs/contracts.js"></script>
+
+  <!-- Vue.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+  <!-- 引入 web3.js -->
+  <script src="./web3.min.js"></script>
+
+  
+  <script>
+    
+    let web3;
+        // 浏览器环境且已经安装了 Metamask
+        if (typeof window !== 'undefined' && typeof window.web3 !== 'undefined') {
+            web3 = new Web3(window.web3.currentProvider);
+            console.log("装了metamask");
+            // 服务器环境或者没有安装 Metamask
+        } else {
+            web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8888'));
+            console.log("没有装metamask");
+        }
+
+    new Vue({
+      el: '#app',
+      data: {
+        user: {
+          userName: '',
+          password: '',
+          confirm: '',
+          type: 'buyer' // 默认为买家，可以是 'buyer' 或 'seller'
+        },
+        alert: ''
+      },
+      methods: {
+        async addUser() {
+          if (!this.validateForm()) return;
+
+          try {
+            const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+            const owner = accounts[0];
+
+            // 加载合约对象
+            const { userContract, merchantContract } = await loadContracts();
+
+            // 根据用户选择的身份调用相应的注册方法
+            if (this.user.type === 'buyer') {
+              await userContract.methods.registerAsUser_hx(this.user.userName, this.user.password).send({ from: owner });
+            } else if (this.user.type === 'seller') {
+              await merchantContract.methods.registerAsMerchant_hx(this.user.userName, this.user.password).send({ from: owner });
+            }
+
+            alert("注册成功！");
+            window.location.href = "/login_hx.html";
+
+          } catch (err) {
+            console.error("注册错误:", err.message);
+            alert("注册失败：" + err.message);
+          }
+        },
+        validateForm() {
+          const userData = this.user;
+          if (!userData.userName || !userData.password || !userData.confirm || !userData.type) {
+            this.alert = "请填写完整信息！";
+            return false;
+          } else if (userData.password !== userData.confirm) {
+            this.alert = "两次密码输入不一致";
+            return false;
+          }
+          return true;
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>

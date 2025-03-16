@@ -1,0 +1,79 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\何小鑫\\Desktop\\hardhat-app\\contracts\\MerchantContract_hx.sol": {
+      "lastModificationDate": 1719144640065,
+      "contentHash": "3d9015084360085f85536d7b8afa52a2",
+      "sourceName": "contracts/MerchantContract_hx.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "MerchantContract_hx"
+      ]
+    },
+    "C:\\Users\\何小鑫\\Desktop\\hardhat-app\\contracts\\UserContract_hx.sol": {
+      "lastModificationDate": 1719293969662,
+      "contentHash": "c50cf0affc2c2a1bd89bf55b9c03e56d",
+      "sourceName": "contracts/UserContract_hx.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./MerchantContract_hx.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "UserContract_hx"
+      ]
+    }
+  }
+}

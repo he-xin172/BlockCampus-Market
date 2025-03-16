@@ -1,0 +1,315 @@
+.product-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    max-height: 350px;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+  }
+
+  .product {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px;
+    width: calc(33.33% - 20px);
+    float: left;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    background-color: #f9f9f9;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .toggle-details-button {
+    margin-top: auto;
+    align-self: center;
+  }
+
+  .product-details {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  .product-details p {
+    margin: 5px 0;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .product-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .comment-input {
+    margin-top: 10px;
+    width: 70%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+
+  .submit-comment {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .submit-comment:hover {
+    background-color: #45a049;
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .transaction-item {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px;
+    width: calc(50% - 20px);
+    float: left;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    background-color: #f9f9f9;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 768px) {
+    .transaction-item {
+      width: calc(100% - 20px);
+    }
+  }
+
+  .transaction-item p {
+    margin: 5px 0;
+    font-size: 28px;
+  }
+
+  .transaction-item .comment-button {
+    margin-top: 10px;
+  }
+
+  .transaction-item .modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fefefe;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+  }
+
+  .transaction-item .modal .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+
+  .transaction-item .modal .close:hover,
+  .transaction-item .modal .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .transaction-item .modal .comment-input {
+    margin-top: 10px;
+  }
+
+  .transaction-item .modal .submit-comment {
+    display: block;
+    margin: 0 auto;
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .transaction-item .modal .submit-comment:hover {
+    background-color: #45a049;
+  }
+
+  .comment-button {
+    font-size: 16px;
+    padding: 10px 20px;
+  }
+
+  .comment-input {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  .submit-comment {
+    display: block;
+    margin: 0 auto;
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .submit-comment:hover {
+    background-color: #45a049;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    max-width: 500px;
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+  }
+
+.modal-content textarea {
+    width: 100%;
+    height: 100px; /* 调整为适当的高度 */
+    padding: 8px;
+    box-sizing: border-box;
+    font-size: 14px;
+    resize: vertical; /* 允许垂直调整大小 */
+  }
+  
+  .modal-content .rating-input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    font-size: 14px;
+  }
+  
+  .popup {
+    display: none; /* 初始状态隐藏 */
+    position: fixed;
+    top: 50%; /* 垂直居中 */
+    left: 50%; /* 水平居中 */
+    transform: translate(-50%, -50%); /* 使用负的50%来居中 */
+    z-index: 9999; /* 确保模态框位于其他内容之上 */
+    background-color: #fefefe; /* 白色背景 */
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 阴影效果 */
+    max-width: 60%; /* 最大宽度 */
+    max-height: 70%; /* 最大高度 */
+    overflow-y: auto; /* 如果内容超过高度，显示滚动条 */
+  }
+  
+  .popup-content {
+    padding: 10px; /* 内边距 */
+    text-align: center; /* 内容居中 */
+  }
+  
+  .popup-content img {
+    max-width: 100%; /* 图片宽度最大100% */
+    max-height: 500px; /* 图片高度最大300像素 */
+    height: auto; /* 自适应高度 */
+  }  
+   
+  .close {
+    color: #aaa; /* 关闭按钮颜色 */
+    float: right; /* 右浮动 */
+    font-size: 28px; /* 字体大小 */
+    font-weight: bold; /* 加粗 */
+    cursor: pointer; /* 鼠标指针为指示 */
+  }
+  
+  .close:hover,
+  .close:focus {
+    color: black; /* 悬停时颜色变为黑色 */
+    text-decoration: none; /* 去掉下划线 */
+    cursor: pointer; /* 鼠标指针为指示 */
+  }
+
+  /* 背景层 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+  z-index: 900;
+  display: none; /* 默认隐藏 */
+}
+  
+.comments-container {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.comment-item {
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+.comment-item p {
+  margin: 5px 0;
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+}

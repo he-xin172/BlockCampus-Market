@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户页面</title>
+  <link rel="stylesheet" href="./public/css/style_hx.css">
+  <link rel="stylesheet" href="./public/css/user_hx.css">
+</head>
+
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="container">
+        <h1>用户页面</h1>
+        <ul class="nav-links">
+          <li><a href="#" id="product-list-link">商品列表</a></li>
+          <li><a href="#" id="favorites-link">我的收藏</a></li>
+          <li><a href="#" id="transactions-link">交易记录</a></li>
+          <li><a href="#" id="view-comments-link"> 查看评论</a></li>
+          <li><a href="#" id="balance-link">查看余额</a></li>
+          <li><a href="login_hx.html">退出登录</a></li>
+        </ul>
+
+      </div>
+    </nav>
+  </header>
+  <main id="main" class="container">
+    <h3 id="merchant-address"></h3>
+    <h3 id="user-address"></h3>
+    <section id="product-list" class="section">
+      <h2>商品列表</h2>
+      <!-- 筛选功能 -->
+      <div id="filter-section">
+        <input type="text" id="filter-keyword" placeholder="输入商品名称关键字...">
+        <button id="filter-button">筛选</button>
+      </div>
+      <!-- 商品列表部分 -->
+      <div id="products">
+        <!-- 每个商品的结构 -->
+        <div class="product">
+          <div class="product-actions">
+            <!-- 添加按钮用于触发模态框显示 -->
+            <button class="show-details-button" data-product-id="${productInfo[0]}">查看详情</button>
+            <button class="buy-button">购买</button>
+            <button class="favorite-button">收藏</button>
+            <button class="report-button">举报</button>
+
+          </div>
+        </div>
+      </div>
+
+      <div id="pagination">
+        <button id="prev-page">上一页</button>
+        <button id="next-page">下一页</button>
+      </div>
+    </section>
+    <section id="favorites" class="section hidden">
+      <h2>我的收藏</h2>
+      <div id="favorite-products"></div>
+    </section>
+    <section id="transactions" class="section hidden">
+      <h2>交易记录</h2>
+      <div id="completed-transactions" class="transaction-list">
+        <!-- 在模态框的 modalContent 内容中 -->
+        <ul>评分：<input type="number" class="rating-input" min="1" max="5" placeholder="请输入1到5之间的评分"></ul><br>
+        <textarea class="comment-input" rows="4" placeholder="请输入评论..."></textarea>
+        <button class="submit-comment">提交评论</button>
+
+      </div>
+    </section>
+    <section id="comments" class="section hidden">
+      <h2>所有商品的评论</h2>
+      <div id="user-comments" class="comments-container">
+        <!-- 这里将显示用户的评论 -->
+    </div>
+    </section>
+    
+
+
+  </main>
+  <footer class="footer">
+    <!-- 模态框 -->
+    <div id="myModal" class="popup">
+      <div class="popup-content">
+        <span class="close">&times;</span>
+        <h3 id="popup-product-title"></h3>
+        <p id="popup-product-description"></p>
+        <p id="popup-product-price"></p>
+        <p id="popup-product-quantity"></p>
+        <img id="popup-product-image" src="" alt="商品图片">
+      </div>
+    </div>
+
+    <div class="container">
+      <p>联系我们 | 隐私政策 | 版权信息</p>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      let web3;
+      if (window.ethereum) {
+        web3 = new Web3(window.ethereum);
+        try {
+          await window.ethereum.enable();
+        } catch (error) {
+          console.error("用户拒绝访问账户或其他错误发生: ", error);
+        }
+      } else {
+        web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8888'));
+        console.log("没有注入Web3实例，使用本地Web3。");
+      }
+
+      let userContract; // 声明 userContract 变量在全局作用域内
+
+      async function loadContracts() {
+        try {
+          const response = await fetch('../address_hx.json');
+          if (!response.ok) {
+            throw new Error('Failed to fetch address_hx.json');
+          }
+          const contractAddrArray = await response.json();
+
+          const [MerchantContract_hx, UserContract_hx] = await Promise.all([
+            fetch('../artifacts/contracts/MerchantContract_hx.sol/MerchantContract_hx.json').then(response => response.json()),
+            fetch('../artifacts/contracts/UserContract_hx.sol/UserContract_hx.json').then(response => response.json())
+          ]);
+
+          const merchantAddr = contractAddrArray[0];
+          const userAddr = contractAddrArray[1];
+          const merchantContract = new web3.eth.Contract(MerchantContract_hx.abi, merchantAddr);
+          userContract = new web3.eth.Contract(UserContract_hx.abi, userAddr); // 将 userContract 赋值给全局变量
+
+          return {
+            merchantContract,
+            userContract
+          };
+        } catch (error) {
+          console.error('加载合约失败:', error);
+          throw error;
+        }
+      }
+
+      async function fetchProductIds(merchantContract) {
+        try {
+          const productIds = await merchantContract.methods.getProductIds_hx().call();
+          console.log('获取商品ID列表成功:', productIds);
+          return productIds;
+        } catch (error) {
+          console.error('获取商品ID列表失败:', error);
+          throw error;
+        }
+      }
+
+      async function getProductDetails(merchantContract, productId) {
+        try {
+          const productInfo = await merchantContract.methods.getProductInfoById_hx(productId).call();
+          console.log(`获取商品详情成功 (ID: ${productId}):`, productInfo);
+          return productInfo;
+        } catch (error) {
+          console.error(`获取商品详情失败 (ID: ${productId}):`, error);
+          throw error;
+        }
+      }
+
+      async function displayProducts(pageNumber = 1) {
+        const productsContainer = document.getElementById('products');
+        productsContainer.innerHTML = '';
+
+        try {
+          const { merchantContract } = await loadContracts();
+          const productIds = await fetchProductIds(merchantContract);
+          const itemsPerPage = 3; // 每页显示3个商品
+          const startIndex = (pageNumber - 1) * itemsPerPage;
+          const endIndex = pageNumber * itemsPerPage;
+          const visibleProductIds = productIds.slice(startIndex, endIndex);
+
+          if (visibleProductIds.length === 0) {
+            productsContainer.innerHTML = '<p>暂无商品可显示。</p>';
+          } else {
+            let displayedProducts = 0;
+
+            for (let i = 0; i < visibleProductIds.length; i++) {
+              const productId = visibleProductIds[i];
+              const productInfo = await getProductDetails(merchantContract, productId);
+
+              // 检查商品是否可购买，如果不可购买则跳过
+              if (!productInfo[7]) {
+                continue;
+              }
+
+              const productElement = createProductElement(productInfo);
+              productsContainer.appendChild(productElement);
+              displayedProducts++;
+
+              // 控制每页显示的商品数量为3个
+              if (displayedProducts >= itemsPerPage) {
+                break; // 达到每页显示的商品数量后，停止添加新的商品元素
+              }
+            }
+            // 如果实际加载的商品少于每页数量，可以在此添加逻辑来补足商品
+            const productsDisplayed = productsContainer.children.length;
+            const productsNeeded = itemsPerPage - productsDisplayed;
+            if (productsNeeded > 0) {
+              const additionalProductIds = productIds.slice(endIndex, endIndex + productsNeeded);
+              for (let i = 0; i < additionalProductIds.length; i++) {
+                const productId = additionalProductIds[i];
+                const productInfo = await getProductDetails(merchantContract, productId);
+                // 检查商品是否可购买，如果不可购买则跳过
+                if (!productInfo[7]) {
+                  continue;
+                }
+                const productElement = createProductElement(productInfo);
+                productsContainer.appendChild(productElement);
+                displayedProducts++;
+
+                if (displayedProducts >= itemsPerPage) {
+                  break; // 达到每页显示的商品数量后，停止添加新的商品元素
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('显示商品列表失败:', error);
+          productsContainer.innerHTML = '<p>获取商品列表失败。</p>';
+        }
+      }
+
+
+      function createProductElement(productInfo) {
+        const productElement = document.createElement('div');
+        productElement.classList.add('product');
+        productElement.innerHTML = `
+          <h3>商品名称：${productInfo[3]}</h3>
+          <p>价格: ${productInfo[5]}</p>
+          <p>${productInfo[4]}</p>
+          <img src="https://gateway.pinata.cloud/ipfs/${productInfo[8]}" alt="${productInfo[3]}的图片" class="product-image">
+          <div class="product-actions">
+            <button class="toggle-details-button">查看详情</button>
+            <button class="buy-button" data-product-id="${productInfo[0]}" data-product-price="${productInfo[5]}">购买</button>
+            <button class="favorite-button" data-product-id="${productInfo[0]}">收藏</button>
+             <button class="report-button">举报</button>
+            <div class="product-details hidden">
+              <h4>商品详情：</h4>
+              <p>商品编号: ${productInfo[0]}</p>
+              <p>描述: ${productInfo[4]}</p>
+              <p>价格: ${productInfo[5]}</p>
+              <p>库存: ${productInfo[6]}</p>
+              <p>图片: <img src="https://gateway.pinata.cloud/ipfs/${productInfo[8]}" alt="${productInfo[3]}的图片" class="product-image"></p>
+            </div>
+          </div>
+        `;
+
+        // 获取商品列表容器
+        const productsContainer = document.getElementById('products');
+
+        // 监听商品列表中的按钮点击事件
+        productsContainer.addEventListener('click', async (event) => {
+          const target = event.target;
+
+          // 确保点击的是查看详情按钮
+          if (target.classList.contains('toggle-details-button')) {
+            // 找到商品元素
+            const productElement = target.closest('.product');
+            console.log("商品信息", productElement);
+
+            // 获取商品的详细信息
+            const productName = productElement.querySelector('h3').textContent;
+            const productDescription = productElement.querySelector('p:nth-of-type(2)').textContent;
+            const productPrice = productElement.querySelector('p:nth-of-type(1)').textContent.split(' ')[1];
+            const productImageSrc = productElement.querySelector('.product-image').getAttribute('src');
+            const productQuantity = productElement.querySelector('p:nth-of-type(3)').textContent;
+
+            // 更新模态框中的内容
+            const popupTitle = document.getElementById('popup-product-title');
+            const popupDescription = document.getElementById('popup-product-description');
+            const popupPrice = document.getElementById('popup-product-price');
+            const popupImage = document.getElementById('popup-product-image');
+            const popupQuantity = document.getElementById('popup-product-quantity');
+
+
+            popupTitle.textContent = productName;
+            popupDescription.textContent = `描述: ${productDescription}`;
+            popupPrice.textContent = `价格: ${productPrice}`;
+            popupQuantity.textContent = `数量: ${productInfo[6]}`;
+            popupImage.src = productImageSrc;
+
+            // 显示模态框
+            const popup = document.getElementById('myModal');
+            popup.style.display = 'block';
+
+            // 当点击模态框上的关闭按钮时，关闭模态框
+            const closeModalButton = document.querySelector('.close');
+            closeModalButton.addEventListener('click', () => {
+              popup.style.display = 'none';
+            });
+
+            // 当用户点击模态框外部区域时，关闭模态框
+            window.addEventListener('click', (event) => {
+              if (event.target === popup) {
+                popup.style.display = 'none';
+              }
+            });
+          }
+        });
+
+        const buyButton = productElement.querySelector('.buy-button');
+        buyButton.addEventListener('click', async () => {
+          try {
+            const accounts = await web3.eth.getAccounts();
+            const userAddress = accounts[0];
+            const productId = buyButton.getAttribute('data-product-id');
+            const productPrice = parseFloat(buyButton.getAttribute('data-product-price')); // 将价格转换为浮点数
+            // 确保 userContract 已加载
+            if (!userContract) {
+              throw new Error('User contract not initialized');
+            }
+
+            // 调用用户合约的购买商品函数
+            const result = await userContract.methods.purchaseProduct_hx(productId, productPrice.toString()).send({ from: userAddress });
+            console.log("购买参数", result);
+            // 检查交易是否成功
+            if (result.status) {
+              alert('购买成功！');
+              await displayProducts(); // 刷新商品列表
+            } else {
+              throw new Error('Transaction failed'); // 如果交易状态不成功，抛出错误
+            }
+          } catch (error) {
+            console.error('购买商品失败:', error);
+            alert(`购买商品失败: ${error.message}`); // 显示具体的错误信息给用户
+          }
+        });
+
+        const favoriteButton = productElement.querySelector('.favorite-button');
+        favoriteButton.addEventListener('click', () => {
+          const productId = favoriteButton.getAttribute('data-product-id');
+          addFavoriteProduct(productInfo); // 将商品添加到收藏
+          alert(`收藏商品 ${productId}`);
+        });
+
+        const reportButton = productElement.querySelector('.report-button');
+        if (reportButton) {
+          reportButton.addEventListener('click', () => {
+            // 处理举报按钮点击事件
+            alert('举报成功！'); //显示举报成功提示
+
+          });
+        }
+
+        // 点击筛选按钮
+        const filterButton = document.getElementById('filter-button');
+        if (filterButton) {
+          filterButton.addEventListener('click', async () => {
+            try {
+              console.log('筛选按钮被点击');
+              const filterInput = document.getElementById('filter-keyword');
+              const filterKeyword = filterInput.value.trim().toLowerCase(); // 转换为小写以进行不区分大小写的匹配
+              console.log('筛选关键字:', filterKeyword); // 调试输出筛选关键字
+              // 获取商品列表容器和商品元素
+              const productsContainer = document.getElementById('products');
+              const products = productsContainer.querySelectorAll('.product');
+
+              products.forEach(product => {
+                // 获取商品名称元素
+                const productNameElement = product.querySelector('h3');
+                if (productNameElement) {
+                  const productName = productNameElement.textContent.trim().toLowerCase(); // 获取商品名称并转换为小写
+                  console.log('商品名称:', productName);
+                  // 根据关键字筛选条件隐藏或显示商品
+                  if (productName.includes(filterKeyword)) {
+                    console.log('符合筛选条件', productName);
+                    product.style.display = 'block'; // 符合筛选条件显示商品
+                  } else {
+                    product.style.display = 'none'; // 不符合筛选条件隐藏商品
+                  }
+                }
+              });
+            } catch (error) {
+              console.error('筛选商品列表失败:', error);
+            }
+          });
+        }
+
+        return productElement;
+      }
+
+      function addFavoriteProduct(productInfo) {
+        const favoriteProductsContainer = document.getElementById('favorite-products');
+        const productElement = createProductElement(productInfo);
+        favoriteProductsContainer.appendChild(productElement);
+      }
+
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+          const { merchantContract, userContract } = await loadContracts();
+          document.getElementById('merchant-address').textContent = `商家地址: ${merchantContract.options.address}`;
+          document.getElementById('user-address').textContent = `用户地址: ${userContract.options.address}`;
+          await displayProducts();
+        } catch (error) {
+          console.error('初始化失败:', error);
+        }
+
+      });
+
+      // 获取交易记录
+      async function fetchTransactionHistory() {
+        try {
+          const accounts = await web3.eth.getAccounts();
+          const userAddress = accounts[0]; // 获取当前 MetaMask 用户的地址
+          const transactions = await userContract.methods.getTransactionHistory_hx().call({ from: userAddress });
+          console.log('交易记录:', transactions);
+          return transactions;
+        } catch (error) {
+          console.error('获取交易记录失败:', error);
+          throw error;
+        }
+      }
+      // 显示交易历史
+      async function displayTransactionHistory() {
+        const transactionList = document.getElementById('completed-transactions');
+        transactionList.innerHTML = ''; // 清空现有的交易记录
+
+        try {
+          console.log('开始显示交易记录...');
+          const transactions = await fetchTransactionHistory();
+          if (transactions.length === 0) {
+            transactionList.innerHTML = '<p>暂无交易记录。</p>';
+          } else {
+            transactions.forEach(transaction => {
+              const transactionElement = document.createElement('div');
+              transactionElement.classList.add('transaction-item');
+
+              const transactionInfo = document.createElement('p');
+              transactionInfo.innerHTML = `
+                <p>商品ID: ${transaction[0]}</p>
+                <p>价格: ${transaction[1]}</p>
+                <p>时间: ${new Date(transaction[2] * 1000).toLocaleString()}</p>
+              `;
+              transactionElement.appendChild(transactionInfo);
+
+              // 添加评论按钮
+              const commentButton = document.createElement('button');
+              commentButton.textContent = '评论';
+              commentButton.classList.add('comment-button');
+              transactionElement.appendChild(commentButton);
+
+              // 添加模态框
+              const modal = document.createElement('div');
+              modal.classList.add('modal');
+              const modalContent = document.createElement('div');
+              modalContent.classList.add('modal-content');
+              modalContent.innerHTML = `
+            <span class="close">&times;</span>
+            <input type="number" class="rating-input" min="1" max="5" placeholder="请输入1到5之间的评分">
+            <br>
+            <textarea class="comment-input" rows="4" placeholder="请输入评论..."></textarea>
+            <button class="submit-comment">提交评论</button>
+          `;
+              modal.appendChild(modalContent);
+              transactionElement.appendChild(modal);
+
+              commentButton.addEventListener('click', () => {
+                modal.style.display = 'block';
+              });
+
+              const closeButton = modalContent.querySelector('.close');
+              closeButton.addEventListener('click', () => {
+                modal.style.display = 'none';
+              });
+
+              const submitButton = modalContent.querySelector('.submit-comment');
+              submitButton.addEventListener('click', async () => {
+                const ratingInput = modalContent.querySelector('.rating-input');
+                const commentInput = modalContent.querySelector('.comment-input');
+                const rating = parseInt(ratingInput.value.trim(), 10);
+                const comment = commentInput.value.trim();
+
+                if (rating >= 1 && rating <= 5 && comment !== '') {
+                  try {
+                    const accounts = await web3.eth.getAccounts();
+                    const userAddress = accounts[0]; // 获取当前 MetaMask 用户的地址
+                    const productId = transaction[0]; // 获取商品ID
+                    // 向合约添加评论功能
+                    const result = await userContract.methods.addComment_hx(productId, rating, comment).send({ from: userAddress });
+                    console.log("评论参数", result);
+                    alert('评论成功！');
+                    modal.style.display = 'none';
+                    await displayTransactionHistory(); // 刷新交易记录
+                  } catch (error) {
+                    console.error('评论失败:', error);
+                    alert(`评论失败: ${error.message}`);
+                  }
+                } else {
+                  alert('请输入有效的评分 (1-5) 和评论内容。');
+                }
+              });
+
+              transactionList.appendChild(transactionElement);
+            });
+          }
+        } catch (error) {
+          console.error('显示交易记录失败:', error);
+          transactionList.innerHTML = '<p>获取交易记录失败。</p>';
+        }
+      }
+
+      async function showSection(sectionId) {
+        const sections = document.querySelectorAll('.section');
+        sections.forEach(section => {
+          if (section.id === sectionId) {
+            section.classList.remove('hidden');
+          } else {
+            section.classList.add('hidden');
+          }
+        });
+
+        if (sectionId === 'transactions') {
+          console.log('点击了交易记录按钮...');
+          await displayTransactionHistory();
+        }
+      }
+
+      // 绑定导航栏链接
+      document.getElementById('product-list-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        showSection('product-list');
+      });
+      // 绑定收藏夹链接
+      document.getElementById('favorites-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        showSection('favorites');
+      });
+
+      // 确认交易记录按钮点击事件绑定
+      document.getElementById('transactions-link').addEventListener('click', async () => {
+        console.log('点击了交易记录按钮'); // 确认点击事件被触发时打印到控制台
+        await showSection('transactions');
+        await displayTransactionHistory();
+      });
+
+      // 分页功能
+      let currentPage = 1;
+      document.getElementById('prev-page').addEventListener('click', async () => {
+        if (currentPage > 1) {
+          currentPage--;
+          await displayProducts(currentPage);
+        }
+      });
+      //下一页
+      document.getElementById('next-page').addEventListener('click', async () => {
+        currentPage++;
+        await displayProducts(currentPage);
+      });
+      //查看余额
+      document.getElementById('balance-link').addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+          const accounts = await web3.eth.getAccounts();
+          const userAddress = accounts[0];
+
+          if (!userContract) {
+            throw new Error('User contract not initialized');
+          }
+          // 调用合约的getBalance函数获取余额
+          const balance = await userContract.methods.getBalance_hx().call({ from: userAddress });
+          alert(`用户余额: ${balance}`);
+        } catch (error) {
+          console.error('获取用户余额失败:', error);
+          alert(`获取用户余额失败: ${error.message}`);
+        }
+      });
+      // 获取导航栏中查看评论链接元素
+    const viewCommentsLink = document.getElementById('view-comments-link');
+   // 绑定收藏夹链接
+   document.getElementById('view-comments-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        showSection('comments');
+      });
+    // 添加点击事件监听器
+    if (viewCommentsLink) {
+        viewCommentsLink.addEventListener('click', async function(event) {
+            event.preventDefault(); // 阻止默认点击行为
+
+            try {
+                await displayUserComments(); // 调用显示用户评论的函数
+            } catch (error) {
+                console.error('获取用户评论失败:', error);
+                alert(`获取用户评论失败: ${error.message}`);
+            }
+        });
+    } else {
+        console.error('无法找到查看评论链接');
+    }
+
+    // 显示用户的所有评论
+    async function displayUserComments() {
+        try {
+            const accounts = await web3.eth.getAccounts();
+            const userAddress = accounts[0];
+
+            if (!userContract) {
+                throw new Error('User contract not initialized');
+            }
+
+            // 调用合约的获取用户评论函数
+            const userComments = await userContract.methods.getUserComments_hx().call({ from: userAddress });
+            console.log('用户评论:', userComments);
+
+            // 在页面上显示用户的评论
+            const commentsContainer = document.getElementById('user-comments');
+            commentsContainer.innerHTML = ''; // 清空现有的评论
+
+            if (userComments.length === 0) {
+                commentsContainer.innerHTML = '<p>暂无评论。</p>';
+            } else {
+                userComments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.classList.add('comment-item');
+                    commentElement.innerHTML = `
+                        <p>商品ID: ${comment[0]}</p>
+                        <p>评分: ${comment[1]}</p>
+                        <p>评论内容: ${comment[2]}</p>
+                    `;
+                    commentsContainer.appendChild(commentElement);
+                });
+            }
+        } catch (error) {
+            console.error('获取用户评论失败:', error);
+            alert(`获取用户评论失败: ${error.message}`);
+        }
+      }
+
+      // 默认显示第一页商品
+      await displayProducts(currentPage);
+    });
+  </script>
+</body>
+
+</html>
